@@ -1,0 +1,407 @@
+<!doctype html>
+<html class="no-js" lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SAR Project - Group Management</title>
+    <link rel="stylesheet" href="css/foundation.css" />
+    <script src="js/modernizr.js"></script>
+    <style>
+      .success-message {
+        background-color: #d4edda;
+        color: #155724;
+        padding: 10px;
+        border-radius: 5px;
+        margin-bottom: 15px;
+        display: none;
+      }
+      .error-message {
+        background-color: #f8d7da;
+        color: #721c24;
+        padding: 10px;
+        border-radius: 5px;
+        margin-bottom: 15px;
+        display: none;
+      }
+      .cookie-info {
+        background-color: #d1ecf1;
+        color: #0c5460;
+        padding: 10px;
+        border-radius: 5px;
+        margin-bottom: 15px;
+      }
+      .live-badge {
+        display: inline-block;
+        width: 10px;
+        height: 10px;
+        background-color: #dc3545;
+        border-radius: 50%;
+        margin-right: 5px;
+        animation: pulse 2s infinite;
+      }
+      .live-badge.connected {
+        background-color: #28a745;
+      }
+      @keyframes pulse {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.5; }
+      }
+      #eventLog {
+        max-height: 200px;
+        overflow-y: auto;
+        background-color: #f8f9fa;
+        padding: 10px;
+        border: 1px solid #dee2e6;
+        border-radius: 5px;
+        font-family: monospace;
+        font-size: 12px;
+      }
+      .event-entry {
+        margin-bottom: 5px;
+        padding: 3px;
+        border-left: 3px solid #007bff;
+        padding-left: 8px;
+      }
+    </style>
+  </head>
+  <body>
+    
+    <!-- Header and Nav -->
+  
+  <div class="row">
+    <div class="medium-12 columns">
+      <p><img src="img/header.png" /></p>    
+    </div>  
+    <div class="medium-12 columns" >
+      <div class="contain-to-grid"> 
+        <nav class="top-bar" data-topbar>
+          <ul class="title-area">
+            <li class="name">
+              <h1>
+                <a href="index.htm">
+                  SAR Project - Group Management
+                </a>
+              </h1>
+            </li>
+            <li class="toggle-topbar menu-icon"><a href="#"><span>menu</span></a></li>
+          </ul>
+          <section class="top-bar-section">
+          <!-- Right Nav Section -->
+            <ul class="right">
+              <li><a href="#form">Create Group</a></li>
+              <li><a href="#groups">View Groups</a></li>
+              <li><a href="#events">SSE Events</a></li>
+            </ul>
+          </section>
+        </nav>
+      </div> 
+    </div>   
+  </div>
+    
+ <!-- Main Content Section -->
+    <div class="row">
+      
+      <!-- Cookie Information -->
+      <div class="medium-12 columns">
+        <div class="cookie-info">
+          <strong>Cookie Test:</strong> <span id="cookieValue">No cookie set yet</span>
+        </div>
+      </div>
+
+      <!-- Success/Error Messages -->
+      <div class="medium-12 columns">
+        <div id="successMessage" class="success-message"></div>
+        <div id="errorMessage" class="error-message"></div>
+      </div>
+
+      <!-- Group Creation Form -->
+      <div class="medium-12 columns" id="form">
+        <div class="panel">
+          <h3>Create or Update Group</h3>
+          <form id="groupForm" method="POST" >
+            <div class="row">
+              <div class="medium-4 columns">
+                <label>Group Number
+                  <input type="text" id="groupNumber" name="groupNumber" placeholder="e.g., 42" required />
+                </label>
+              </div>
+              <div class="medium-4 columns">
+                <label>Counter
+                  <input type="checkbox" id="counter" name="counter" /> Enable counter
+                </label>
+              </div>
+            </div>
+
+            <div class="row">
+              <div class="medium-6 columns">
+                <h5>Member 1</h5>
+                <label>Number
+                  <input type="text" id="number0" name="number0" placeholder="Student number" required />
+                </label>
+                <label>Name
+                  <input type="text" id="name0" name="name0" placeholder="Student name" required />
+                </label>
+              </div>
+              <div class="medium-6 columns">
+                <h5>Member 2</h5>
+                <label>Number
+                  <input type="text" id="number1" name="number1" placeholder="Student number" required />
+                </label>
+                <label>Name
+                  <input type="text" id="name1" name="name1" placeholder="Student name" required />
+                </label>
+              </div>
+            </div>
+
+            <div class="row">
+              <div class="medium-12 columns">
+                <button type="submit" class="button success">Create/Update Group</button>
+                <button type="button" class="button alert" id="deleteBtn">Delete Group</button>
+                <button type="reset" class="button secondary">Clear Form</button>
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <!-- Groups Table -->
+      <div class="medium-12 columns" id="groups">
+        <div class="panel">
+          <h3>Registered Groups</h3>
+          <div id="groupsTable">
+            <p>Loading groups...</p>
+          </div>
+          <button class="button small" id="refreshBtn">Refresh Groups</button>
+        </div>
+      </div>
+
+      <!-- SSE Events Panel (Bonus Feature) -->
+      <div class="medium-12 columns" id="events">
+        <div class="panel">
+          <h3>
+            <span class="live-badge" id="sseBadge"></span>
+            Server-Sent Events (SSE) - Real-time Updates
+          </h3>
+          <p>
+            <strong>Status:</strong> <span id="sseStatus">Not connected</span>
+          </p>
+          <p>
+            This section displays real-time events when SSE is implemented. 
+            Groups created/deleted/updated will appear here automatically without page refresh.
+          </p>
+          <button class="button small" id="sseConnectBtn">Connect to SSE</button>
+          <button class="button small secondary" id="sseClearBtn">Clear Log</button>
+          <div id="eventLog"></div>
+        </div>
+      </div>
+
+    </div> <!-- End of main content -->
+
+    <footer class="row">
+      <div class="medium-12 columns">
+        <hr />
+        <p>© DEE - FCT/UNL | SAR Project Boilerplate</p>                 
+      </div>
+    </footer>
+    
+    <script src="js/jquery.js"></script>
+    <script src="js/foundation.min.js"></script>
+    <script src="js/foundation/foundation.topbar.js"></script>
+    <script>
+      $(document).foundation();
+
+      // ========== Cookie Handling ==========
+      function getCookie(name) {
+        const value = `; ${document.cookie}`;
+        const parts = value.split(`; ${name}=`);
+        if (parts.length === 2) return parts.pop().split(';').shift();
+        return null;
+      }
+
+      function setCookie(name, value, days) {
+        const expires = new Date();
+        expires.setTime(expires.getTime() + (days * 24 * 60 * 60 * 1000));
+        document.cookie = `${name}=${value};expires=${expires.toUTCString()};path=/`;
+      }
+
+      function updateCookieDisplay() {
+        const lastGroup = getCookie('lastGroupNumber');
+        if (lastGroup) {
+          $('#cookieValue').text(`Last created group: ${lastGroup}`);
+        } else {
+          $('#cookieValue').text('No cookie set yet');
+        }
+      }
+
+      // ========== Message Display ==========
+      function showSuccess(message) {
+        $('#successMessage').text(message).fadeIn().delay(3000).fadeOut();
+      }
+
+      function showError(message) {
+        $('#errorMessage').text(message).fadeIn().delay(3000).fadeOut();
+      }
+
+      // ========== Group Management ==========
+      function loadGroups() {
+        $.ajax({
+          url: '/api',
+          method: 'GET',
+          success: function(response) {
+            // Parse HTML response and extract table
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(response, 'text/html');
+            const table = doc.querySelector('table');
+            
+            if (table) {
+              $('#groupsTable').html(table);
+            } else {
+              $('#groupsTable').html('<p>No groups found or unable to parse response.</p>');
+            }
+          },
+          error: function() {
+            $('#groupsTable').html('<p class="error">Failed to load groups. Please ensure the API handler is implemented.</p>');
+          }
+        });
+      }
+
+      // ========== SSE (Server-Sent Events) ==========
+      let eventSource = null;
+
+      function logEvent(type, message) {
+        const timestamp = new Date().toLocaleTimeString();
+        const entry = $('<div class="event-entry"></div>')
+          .text(`[${timestamp}] ${type}: ${message}`);
+        $('#eventLog').prepend(entry);
+      }
+
+      function connectSSE() {
+        if (eventSource && eventSource.readyState !== EventSource.CLOSED) {
+          showError('Already connected to SSE');
+          return;
+        }
+
+        try {
+          eventSource = new EventSource('/events');
+          window.eventSource = eventSource;
+
+          eventSource.onopen = function() {
+            $('#sseStatus').text('Connected').css('color', '#28a745');
+            $('#sseBadge').addClass('connected');
+            logEvent('system', 'Connected to SSE endpoint');
+            showSuccess('Connected to real-time updates!');
+          };
+
+          eventSource.onmessage = function(event) {
+            logEvent('event', event.data);
+            
+            // Try to parse as JSON
+            try {
+              const data = JSON.parse(event.data);
+              if (data.type && data.type.startsWith('group.')) {
+                // Refresh groups table on group events
+                loadGroups();
+              }
+            } catch (e) {
+              // Not JSON, just log the raw data
+            }
+          };
+
+          eventSource.onerror = function(error) {
+            $('#sseStatus').text('Connection error/closed').css('color', '#dc3545');
+            $('#sseBadge').removeClass('connected');
+            logEvent('error', 'SSE connection error or endpoint not implemented');
+            
+            // Don't reconnect automatically if endpoint doesn't exist
+            if (eventSource.readyState === EventSource.CLOSED) {
+              eventSource.close();
+            }
+          };
+
+        } catch (error) {
+          showError('Failed to connect to SSE: ' + error.message);
+          logEvent('error', 'Failed to create EventSource: ' + error.message);
+        }
+      }
+
+      // ========== Initialize on page load ==========
+      $(document).ready(function() {
+        updateCookieDisplay();
+        loadGroups();
+
+        // Form submission - INSIDE document.ready
+        $('#groupForm').on('submit', function(e) {
+          e.preventDefault();
+          e.stopPropagation();
+          
+          const formData = $(this).serialize();
+          const groupNumber = $('#groupNumber').val();
+
+          $.ajax({
+            url: '/api',
+            method: 'POST',
+            data: formData,
+            success: function(response) {
+              showSuccess(`Group ${groupNumber} created/updated successfully!`);
+              setCookie('lastGroupNumber', groupNumber, 7);
+              updateCookieDisplay();
+              loadGroups();
+              
+              // Log event if SSE is not connected
+              if (!window.eventSource || window.eventSource.readyState !== EventSource.OPEN) {
+                logEvent('local', `Group ${groupNumber} created/updated (no SSE)`);
+              }
+            },
+            error: function(xhr) {
+              showError('Failed to save group. Ensure API POST handler is implemented.');
+            }
+          });
+          
+          return false;
+        });
+
+        // Delete button
+        $('#deleteBtn').on('click', function() {
+          const groupNumber = $('#groupNumber').val();
+          if (!groupNumber) {
+            showError('Please enter a group number to delete');
+            return;
+          }
+
+          if (confirm(`Delete group ${groupNumber}?`)) {
+            // Note: Students need to implement DELETE endpoint
+            $.ajax({
+              url: '/api?groupNumber=' + groupNumber,
+              method: 'DELETE',
+              success: function() {
+                showSuccess(`Group ${groupNumber} deleted successfully!`);
+                loadGroups();
+                $('#groupForm')[0].reset();
+              },
+              error: function() {
+                showError('Failed to delete group. Ensure DELETE is implemented.');
+              }
+            });
+          }
+        });
+
+        // Refresh button
+        $('#refreshBtn').on('click', function() {
+          loadGroups();
+        });
+
+        // SSE Connect button
+        $('#sseConnectBtn').on('click', connectSSE);
+
+        // SSE Clear button
+        $('#sseClearBtn').on('click', function() {
+          $('#eventLog').empty();
+        });
+        
+        // Attempt to connect to SSE automatically (optional)
+        // Uncomment the line below to auto-connect:
+        // setTimeout(connectSSE, 1000);
+      });
+    </script>
+  </body>
+</html>
